@@ -1,0 +1,10 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    i2c (0.4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  i2c

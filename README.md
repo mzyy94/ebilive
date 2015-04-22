@@ -75,7 +75,6 @@ Some variables in the script.
      SEGLEN    | Video length of one segment in seconds
     DELSEGS    | Automatic deletion of unneeded segments (true/false)
     NUMSEGS    | Number of segments in M3U8 playlist
-      FPS      | Frame rate per second
 
 ## Other options
 

@@ -23,7 +23,7 @@
 		var player = null;
 		
 		var ua = window.navigator.userAgent.toLowerCase();
-		if (/(ipod|iphone|ipad|macintosh)/.test(ua) && /^(?!.*chrome).*$/.test(ua) && /safari/.test(ua)) {
+		if (/(ipod|iphone|ipad|macintosh|android)/.test(ua) && /^(?!.*chrome).*$/.test(ua) && /safari/.test(ua)) {
 			player = document.getElementById("player");
 			player.play()
 		} else {

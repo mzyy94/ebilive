@@ -52,6 +52,7 @@ Format Video Capture:
 - [VLC](http://www.videolan.org/)
 - [Python](https://www.python.org/) (optional)
 - [Nginx](http://nginx.org/) (optional)
+- [H2O](http://h2o.github.io/) (optional)
 
 
 
@@ -107,6 +108,16 @@ This is a useful one for basic use when you need a good performance.
 $ ./nginx-hls.sh
 ```
 
+
+## HTTP/2 supported test streaming
+
+*H2O required*
+
+HTTP/2 test script powered by h2o 1.2.1.
+
+```
+$ ./h2o-hls-test.sh
+```
 
 
 # Thanks

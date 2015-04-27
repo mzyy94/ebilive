@@ -14,8 +14,6 @@ NUMSEGS=6 # segments count
 # RAM disk settings
 TMPSIZE=128 # RAM disk size in MB
 
-# nginx settings
-
 
 cleanup () {
   kill -s 0 $(cat h2o.pid) >/dev/null 2>&1 && kill -KILL $(cat h2o.pid)

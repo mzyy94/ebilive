@@ -1,20 +1,20 @@
 require 'twitter'
 require_relative 'camera/Camera'
 
+token = eval File.read 'token.rb'
+
 rest = Twitter::REST::Client.new do |config|
-	config.consumer_key        = "2XQPZbKrAUUPPPP0X8KeInvJ1"
-	config.consumer_secret     = "0hLCvX99Or68esqWnwBxhGnTyVa9H5QXYNqJGVORn8kG3Ri5VM"
-	config.access_token        = "109758782-llplQD2XIIvJJBO5nbH7qryASIRTdL7HtX9xsImc"
-	config.access_token_secret = "Sa3jvEPxQKhRNvscXR6CUoA0PKQJXhwiOCMsz7W7ydozx"
+	config.consumer_key        = token[:consumer_key]
+	config.consumer_secret     = token[:consumer_secret]
+	config.access_token        = token[:access_token]
+	config.access_token_secret = token[:access_token_secret]
 end
 
-credentials = rest.credentials
-
 streaming = Twitter::Streaming::Client.new do |config|
-	config.consumer_key        = credentials[:consumer_key]
-	config.consumer_secret     = credentials[:consumer_secret]
-	config.access_token        = credentials[:token]
-	config.access_token_secret = credentials[:token_secret]
+	config.consumer_key        = token[:consumer_key]
+	config.consumer_secret     = token[:consumer_secret]
+	config.access_token        = token[:access_token]
+	config.access_token_secret = token[:access_token_secret]
 end
 
 my_source = '<a href="https://github.com/mzyy94/holoholo/" rel="nofollow">えびかんさつ</a>'

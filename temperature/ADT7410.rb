@@ -2,7 +2,7 @@ require 'i2c'
 
 class ADT7410
 
-	def initialize(path, address = 0x48)
+	def initialize(path = "/dev/i2c-1", address = 0x48)
 		@device = I2C.create(path)
 		@address = address
 	end

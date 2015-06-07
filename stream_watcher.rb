@@ -1,21 +1,22 @@
 require 'twitter'
+require 'yaml'
 require_relative 'camera/Camera'
 
-token = eval File.read 'token.rb'
+config = YAML.load_file 'config.yml'
 
-rest = Twitter::REST::Client.new do |config|
-	config.consumer_key        = token[:consumer_key]
-	config.consumer_secret     = token[:consumer_secret]
-	config.access_token        = token[:access_token]
-	config.access_token_secret = token[:access_token_secret]
-end
+rest = Twitter::REST::Client.new(
+	consumer_key:        config['twitter']['consumer_key'],
+	consumer_secret:     config['twitter']['consumer_secret'],
+	access_token:        config['twitter']['access_token'],
+	access_token_secret: config['twitter']['access_token_secret'],
+)
 
-streaming = Twitter::Streaming::Client.new do |config|
-	config.consumer_key        = token[:consumer_key]
-	config.consumer_secret     = token[:consumer_secret]
-	config.access_token        = token[:access_token]
-	config.access_token_secret = token[:access_token_secret]
-end
+streaming = Twitter::Streaming::Client.new(
+	consumer_key:        config['twitter']['consumer_key'],
+	consumer_secret:     config['twitter']['consumer_secret'],
+	access_token:        config['twitter']['access_token'],
+	access_token_secret: config['twitter']['access_token_secret'],
+)
 
 my_source = '<a href="https://github.com/mzyy94/holoholo/" rel="nofollow">えびかんさつ</a>'
 

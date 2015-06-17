@@ -1,2 +1,5 @@
 config.yml
-
+# Ruby C-extension files
+*.o
+*.so
+Makefile

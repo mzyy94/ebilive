@@ -7,7 +7,7 @@ class ADT7410
 		@address = address
 	end
 
-	def fetch_temperature
+	def fetch
 		data = @device.read(@address, 0x02)
 		temp_h, temp_l = data.bytes.to_a
 

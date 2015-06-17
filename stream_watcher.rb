@@ -26,20 +26,26 @@ video = Regexp.new "(" + config['search']['video'].split(',').join('|') + ")"
 # Reply message
 message = config['response']['message']
 
-streaming.user(with: "user") do |tweet|
-	if tweet.is_a?(Twitter::Tweet)
-		if tweet.text =~ words
-			if tweet.text =~ video
-				file = Camera.record_video
-				rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-				file.close
-			end
+streaming_thread = Thread.new do
+	streaming.user(with: "user") do |tweet|
+		if tweet.is_a?(Twitter::Tweet)
+			if tweet.text =~ words
+				if tweet.text =~ video
+					file = Camera.record_video
+					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+					file.close
+				end
 
-			if tweet.text =~ picture
-				file = Camera.take_picture
-				rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-				file.close
+				if tweet.text =~ picture
+					file = Camera.take_picture
+					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+					file.close
+				end
 			end
 		end
 	end
 end
+
+puts 'Start.'
+
+streaming_thread.join

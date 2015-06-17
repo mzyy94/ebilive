@@ -1,7 +1,5 @@
-# Ebilive
+# Ebilive HLS tools
 
-
-![Ebilive-logo](docs/logo.png)
 
 Web camera direct live streaming scripts powered by Apple HTTP Live Streaming(HLS).
 

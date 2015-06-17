@@ -2,9 +2,9 @@ require 'twitter'
 require 'yaml'
 require 'tempfile'
 require 'gruff'
-require_relative 'camera/Camera'
-require_relative 'sensors/thermocouple/MAX31855'
-require_relative 'sensors/temperature/ADT7410'
+require_relative 'lib/camera/Camera'
+require_relative 'lib/sensors/thermocouple/MAX31855'
+require_relative 'lib/sensors/temperature/ADT7410'
 
 config = YAML.load_file 'config.yml'
 

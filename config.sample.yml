@@ -7,5 +7,7 @@ search:
     trigger:             "えび,エビ,海老,蝦,🍤"
     picture:             "画像,写真"
     video:               "動画,映像"
+    temperature:         "温度"
 response:
     message:             "えびだよ"
+    temperature:         "#now\n\n気温:#temp℃\n水温:#thermo℃\nセンサー基準温度:#inter℃\n"

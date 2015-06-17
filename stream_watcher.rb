@@ -1,6 +1,8 @@
 require 'twitter'
 require 'yaml'
 require_relative 'camera/Camera'
+require_relative 'sensors/thermocouple/MAX31855'
+require_relative 'sensors/temperature/ADT7410'
 
 config = YAML.load_file 'config.yml'
 
@@ -20,11 +22,18 @@ streaming = Twitter::Streaming::Client.new(
 
 # Timeline search regexps
 words = Regexp.new "(" + config['search']['trigger'].split(',').join('|') + ")"
+temperature = Regexp.new "(" + config['search']['temperature'].split(',').join('|') + ")"
 picture = Regexp.new "(" + config['search']['picture'].split(',').join('|') + ")"
 video = Regexp.new "(" + config['search']['video'].split(',').join('|') + ")"
 
 # Reply message
 message = config['response']['message']
+temperature_format = config['response']['temperature']
+
+
+# Setup sensors
+thermo_sensor = MAX31855.new
+temp_sensor = ADT7410.new
 
 streaming_thread = Thread.new do
 	streaming.user(with: "user") do |tweet|
@@ -40,6 +49,14 @@ streaming_thread = Thread.new do
 					file = Camera.take_picture
 					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
 					file.close
+				end
+
+				if tweet.text =~ temperature
+					now = DateTime.now.to_s
+					thermo, inter = thermo_sensor.fetch
+					temp = temp_sensor.fetch
+					text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
+					rest.update("@#{tweet.user.screen_name} #{text}", {in_reply_to_status: tweet})
 				end
 			end
 		end

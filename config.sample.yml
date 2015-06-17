@@ -11,3 +11,12 @@ search:
 response:
     message:             "えびだよ"
     temperature:         "#now\n\n気温:#temp℃\n水温:#thermo℃\nセンサー基準温度:#inter℃\n"
+hls:
+    video_path:          "/dev/video0"
+    width:               1280
+    height:              720
+    fps:                 24
+    seglen:              15
+    delsegs:             true
+    numsegs:             5
+    live_path:           "/usr/share/nginx/www/live"

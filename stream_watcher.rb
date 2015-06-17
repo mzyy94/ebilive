@@ -2,7 +2,6 @@ require 'twitter'
 require 'yaml'
 require 'tempfile'
 require 'gruff'
-require_relative 'lib/camera/Camera'
 require_relative 'lib/sensors/thermocouple/MAX31855'
 require_relative 'lib/sensors/temperature/ADT7410'
 
@@ -79,20 +78,28 @@ def generate_temperature_graph(data)
 	return t
 end
 
+
+# HTTP Live Streaming
+vlc="vlc"
+source="v4l2://#{config['hls']['video_path']}:chroma=H264:width=#{config['hls']['width']}:height=#{config['hls']['height']}:fps=#{config['hls']['fps']}"
+destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=live-#######.ts}"
+quit="vlc://quit"
+interface="-I dummy"
+pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
+
+
 streaming_thread = Thread.new do
 	streaming.user(with: "user") do |tweet|
 		if tweet.is_a?(Twitter::Tweet)
 			if tweet.text =~ words
 				if tweet.text =~ video
-					file = Camera.record_video
-					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-					file.close
+					#NOTE: currently disabled this function
+					#rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
 				end
 
 				if tweet.text =~ picture
-					file = Camera.take_picture
-					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-					file.close
+					#NOTE: currently disabled this function
+					#rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
 				end
 
 				if tweet.text =~ temperature

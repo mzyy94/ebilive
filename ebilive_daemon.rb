@@ -2,6 +2,7 @@ require 'twitter'
 require 'yaml'
 require 'tempfile'
 require 'gruff'
+require 'streamio-ffmpeg'
 require_relative 'lib/sensors/thermocouple/MAX31855'
 require_relative 'lib/sensors/temperature/ADT7410'
 
@@ -88,13 +89,37 @@ interface="-I dummy"
 pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
 
 
+
+FFMPEG::Transcoder.timeout = 10
+
+def get_recorded_video(live_path)
+	playlist = File.join live_path, "index.m3u8"
+	last_file = ""
+	File.open playlist do |file|
+		file.each_line do |line|
+			last_file = line.strip unless line[0] == '#'
+		end
+	end
+	video_path = File.join(live_path, last_file)
+
+	movie = FFMPEG::Movie.new video_path
+
+	t = Tempfile.open(['video', '.mp4'])
+	movie.transcode t.path, "-vcodec copy -an" if movie.valid?
+	return t
+end
+
+
 streaming_thread = Thread.new do
 	streaming.user(with: "user") do |tweet|
 		if tweet.is_a?(Twitter::Tweet)
 			if tweet.text =~ words
 				if tweet.text =~ video
-					#NOTE: currently disabled this function
-					#rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+					#NOTE:this feature is effective with modified version of twitter-gem
+					# See https://github.com/mzyy94/twitter/tree/video-upload-feature
+					file = get_recorded_video config['hls']['live_path']
+					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+					file.close
 				end
 
 				if tweet.text =~ picture

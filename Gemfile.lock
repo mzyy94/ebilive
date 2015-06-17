@@ -6,6 +6,8 @@ GEM
     equalizer (0.0.9)
     faraday (0.9.1)
       multipart-post (>= 1.2, < 3)
+    gruff (0.6.0)
+      rmagick (>= 2.13.4)
     http (0.6.3)
       http_parser.rb (~> 0.6.0)
     http_parser.rb (0.6.0)
@@ -14,6 +16,7 @@ GEM
       thread_safe (~> 0.3, >= 0.3.1)
     multipart-post (2.0.0)
     naught (1.0.0)
+    rmagick (2.15.2)
     simple_oauth (0.3.1)
     thread_safe (0.3.4)
     twitter (5.14.0)
@@ -32,4 +35,5 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  gruff
   twitter

@@ -1,5 +1,7 @@
 require 'twitter'
 require 'yaml'
+require 'tempfile'
+require 'gruff'
 require_relative 'camera/Camera'
 require_relative 'sensors/thermocouple/MAX31855'
 require_relative 'sensors/temperature/ADT7410'
@@ -35,6 +37,48 @@ temperature_format = config['response']['temperature']
 thermo_sensor = MAX31855.new
 temp_sensor = ADT7410.new
 
+# Temperature logging variable
+temperature_log = {'date' => [], 'temp' => [], 'thermo' => [], 'inter' => []}
+
+# Mutex to lock
+mutex = Mutex.new
+
+temperature_collecting_thread = Thread.new do
+	loop do
+		begin
+			mutex.lock
+			temperature_log['date'].push DateTime.now.strftime('%H:%M:%S')
+			thermo, inter = thermo_sensor.fetch
+			temperature_log['thermo'].push thermo
+			temperature_log['inter'].push inter
+			temperature_log['temp'].push temp_sensor.fetch
+			if temperature_log['date'].length > 60
+				temperature_log['date'].shift
+				temperature_log['thermo'].shift
+				temperature_log['inter'].shift
+				temperature_log['temp'].shift
+			end
+		ensure
+			mutex.unlock
+		end
+		sleep 60
+	end
+end
+
+def generate_temperature_graph(data)
+	g = Gruff::Line.new
+	g.title = "Ebilive temperature"
+	g.data "Water temperature", data['thermo']
+	g.data "Air temperature", data['temp']
+	g.data "Thermocouple internals", data['inter']
+
+	g.labels = {0 => data['date'].first, data['date'].length - 1 => data['date'].last}
+
+	t = Tempfile.open(['graph', '.png'])
+	g.write t.path
+	return t
+end
+
 streaming_thread = Thread.new do
 	streaming.user(with: "user") do |tweet|
 		if tweet.is_a?(Twitter::Tweet)
@@ -56,7 +100,14 @@ streaming_thread = Thread.new do
 					thermo, inter = thermo_sensor.fetch
 					temp = temp_sensor.fetch
 					text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
-					rest.update("@#{tweet.user.screen_name} #{text}", {in_reply_to_status: tweet})
+					begin
+						mutex.lock
+						file = generate_temperature_graph temperature_log
+					ensure
+						mutex.unlock
+					end
+					rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
+					file.close
 				end
 			end
 		end
@@ -65,4 +116,5 @@ end
 
 puts 'Start.'
 
+temperature_collecting_thread.join
 streaming_thread.join

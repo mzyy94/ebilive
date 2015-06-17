@@ -3,3 +3,9 @@ twitter:
     consumer_secret:     "0hLCvX99Or68esqWnwBxhGnTyVa9H5QXYNqJGVORn8kG3Ri5VM"
     access_token:        "109758782-llplQD2XIIvJJBO5nbH7qryASIRTdL7HtX9xsImc"
     access_token_secret: "Sa3jvEPxQKhRNvscXR6CUoA0PKQJXhwiOCMsz7W7ydozx"
+search:
+    trigger:             "えび,エビ,海老,蝦,🍤"
+    picture:             "画像,写真"
+    video:               "動画,映像"
+response:
+    message:             "えびだよ"

@@ -18,23 +18,26 @@ streaming = Twitter::Streaming::Client.new(
 	access_token_secret: config['twitter']['access_token_secret'],
 )
 
-words = /(えび|エビ|海老|蝦|🍤")/
-text = 'えびだよ'
-picture = /(画像|絵|写真)/
-video = /(動画|見たい|みたい)/
+# Timeline search regexps
+words = Regexp.new "(" + config['search']['trigger'].split(',').join('|') + ")"
+picture = Regexp.new "(" + config['search']['picture'].split(',').join('|') + ")"
+video = Regexp.new "(" + config['search']['video'].split(',').join('|') + ")"
+
+# Reply message
+message = config['response']['message']
 
 streaming.user(with: "user") do |tweet|
 	if tweet.is_a?(Twitter::Tweet)
 		if tweet.text =~ words
 			if tweet.text =~ video
 				file = Camera.record_video
-				rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
+				rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
 				file.close
 			end
 
 			if tweet.text =~ picture
 				file = Camera.take_picture
-				rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
+				rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
 				file.close
 			end
 		end

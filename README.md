@@ -48,11 +48,11 @@ Copy and edit sample configuration file (config.sample.yml).
 |        message     | A response message for replying to the action             |
 |      temperature   | A message template for replying to the temperature action |
 
-    The following strings will be substituted:
-    - #now: Stringified date and time
-    - #temp: Value of air temperature in Celsius
-    - #thermo: Value of water temperature in Celsius
-    - #inter: Value of thermocouple sensor's internal temperature in Celsius
+>    The following strings will be substituted:
+>    - #now: Stringified date and time
+>    - #temp: Value of air temperature in Celsius
+>    - #thermo: Value of water temperature in Celsius
+>    - #inter: Value of thermocouple sensor's internal temperature in Celsius
 
 
 ## HTTP Live streaming configuration

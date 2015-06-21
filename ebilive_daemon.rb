@@ -92,7 +92,7 @@ pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir
 
 FFMPEG::Transcoder.timeout = 10
 
-def get_recorded_video(live_path)
+def get_newest_video_path(live_path)
 	playlist = File.join live_path, "index.m3u8"
 	last_file = ""
 	File.open playlist do |file|
@@ -100,12 +100,23 @@ def get_recorded_video(live_path)
 			last_file = line.strip unless line[0] == '#'
 		end
 	end
+
 	video_path = File.join(live_path, last_file)
+	return video_path
+end
 
-	movie = FFMPEG::Movie.new video_path
-
+def get_recorded_video(live_path)
+	movie = FFMPEG::Movie.new get_newest_video_path(live_path)
 	t = Tempfile.open(['video', '.mp4'])
 	movie.transcode t.path, "-vcodec copy -an" if movie.valid?
+	return t
+end
+
+def get_screenshot(live_path)
+	movie = FFMPEG::Movie.new get_newest_video_path(live_path)
+
+	t = Tempfile.open(['screenshot', '.png'])
+	movie.screenshot t.path if movie.valid?
 	return t
 end
 
@@ -123,8 +134,9 @@ streaming_thread = Thread.new do
 				end
 
 				if tweet.text =~ picture
-					#NOTE: currently disabled this function
-					#rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+					file = get_screenshot config['hls']['live_path']
+					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+					file.close
 				end
 
 				if tweet.text =~ temperature

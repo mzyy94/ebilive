@@ -73,7 +73,8 @@ Copy and edit sample configuration file (config.sample.yml).
 
 ## Preparation
 ```sh
-$ cp config.sample.yml config.sample.yml
+$ cp config.sample.yml config.yml
+$ nano config.yml
 $ gem install bundler
 $ bundle install
 ```

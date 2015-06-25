@@ -4,6 +4,7 @@ require 'tempfile'
 require 'gruff'
 require 'streamio-ffmpeg'
 require 'max31855'
+require 'forever'
 require_relative 'lib/sensors/temperature/ADT7410'
 
 config = YAML.load_file 'config.yml'
@@ -91,10 +92,10 @@ def get_screenshot(live_path)
 	return t
 end
 
+Forever.run do
 
-
-temperature_collecting_thread = Thread.new do
-	loop do
+	# Temperature logging
+	every 1.minute do
 		begin
 			mutex.lock
 			temperature_log['date'].push DateTime.now.strftime('%H:%M:%S')
@@ -111,58 +112,56 @@ temperature_collecting_thread = Thread.new do
 		ensure
 			mutex.unlock
 		end
-		sleep 60
 	end
-end
 
 
-# HTTP Live Streaming
-vlc="vlc"
-source="v4l2://#{config['hls']['video_path']}:chroma=H264:width=#{config['hls']['width']}:height=#{config['hls']['height']}:fps=#{config['hls']['fps']}"
-destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=live-#######.ts}"
-quit="vlc://quit"
-interface="-I dummy"
-pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
+	before :all do
+		# HTTP Live Streaming
+		vlc="vlc"
+		source="v4l2://#{config['hls']['video_path']}:chroma=H264:width=#{config['hls']['width']}:height=#{config['hls']['height']}:fps=#{config['hls']['fps']}"
+		destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=live-#######.ts}"
+		quit="vlc://quit"
+		interface="-I dummy"
+		pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
+	end
 
 
-streaming_thread = Thread.new do
-	streaming.user(with: "user") do |tweet|
-		if tweet.is_a?(Twitter::Tweet)
-			if tweet.text =~ words
-				if tweet.text =~ video
-					#NOTE:this feature is effective with modified version of twitter-gem
-					# See https://github.com/mzyy94/twitter/tree/video-upload-feature
-					file = get_recorded_video config['hls']['live_path']
-					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-					file.close
-				end
+	on_ready do
+		twitter_streaming_thread = Thread.new do
+			streaming.user(with: "user") do |tweet|
+				if tweet.is_a?(Twitter::Tweet)
+					if tweet.text =~ words
+						if tweet.text =~ video
+							#NOTE:this feature is effective with modified version of twitter-gem
+							# See https://github.com/mzyy94/twitter/tree/video-upload-feature
+							file = get_recorded_video config['hls']['live_path']
+							rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+							file.close
+						end
 
-				if tweet.text =~ picture
-					file = get_screenshot config['hls']['live_path']
-					rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-					file.close
-				end
+						if tweet.text =~ picture
+							file = get_screenshot config['hls']['live_path']
+							rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+							file.close
+						end
 
-				if tweet.text =~ temperature
-					now = DateTime.now.to_s
-					thermo, inter = thermo_sensor.fetch
-					temp = temp_sensor.fetch
-					text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
-					begin
-						mutex.lock
-						file = generate_temperature_graph temperature_log
-					ensure
-						mutex.unlock
+						if tweet.text =~ temperature
+							now = DateTime.now.to_s
+							thermo, inter = thermo_sensor.fetch
+							temp = temp_sensor.fetch
+							text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
+							begin
+								mutex.lock
+								file = generate_temperature_graph temperature_log
+							ensure
+								mutex.unlock
+							end
+							rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
+							file.close
+						end
 					end
-					rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
-					file.close
 				end
 			end
 		end
 	end
 end
-
-puts 'Start.'
-
-temperature_collecting_thread.join
-streaming_thread.join

@@ -33,6 +33,7 @@ GEM
       memoizable (~> 0.4.0)
       naught (~> 1.0)
       simple_oauth (~> 0.3.0)
+    ws2812 (0.0.2)
 
 PLATFORMS
   ruby
@@ -43,6 +44,7 @@ DEPENDENCIES
   max31855
   streamio-ffmpeg
   twitter
+  ws2812
 
 BUNDLED WITH
    1.10.4

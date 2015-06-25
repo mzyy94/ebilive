@@ -40,30 +40,14 @@ temp_sensor = ADT7410.new
 # Temperature logging variable
 temperature_log = {'date' => [], 'temp' => [], 'thermo' => [], 'inter' => []}
 
+# FFMpeg configuration
+FFMPEG::Transcoder.timeout = 10
+
 # Mutex to lock
 mutex = Mutex.new
 
-temperature_collecting_thread = Thread.new do
-	loop do
-		begin
-			mutex.lock
-			temperature_log['date'].push DateTime.now.strftime('%H:%M:%S')
-			thermo, inter = thermo_sensor.fetch
-			temperature_log['thermo'].push thermo
-			temperature_log['inter'].push inter
-			temperature_log['temp'].push temp_sensor.fetch
-			if temperature_log['date'].length > 60
-				temperature_log['date'].shift
-				temperature_log['thermo'].shift
-				temperature_log['inter'].shift
-				temperature_log['temp'].shift
-			end
-		ensure
-			mutex.unlock
-		end
-		sleep 60
-	end
-end
+
+## Some utilities
 
 def generate_temperature_graph(data)
 	g = Gruff::Line.new
@@ -78,19 +62,6 @@ def generate_temperature_graph(data)
 	g.write t.path
 	return t
 end
-
-
-# HTTP Live Streaming
-vlc="vlc"
-source="v4l2://#{config['hls']['video_path']}:chroma=H264:width=#{config['hls']['width']}:height=#{config['hls']['height']}:fps=#{config['hls']['fps']}"
-destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=live-#######.ts}"
-quit="vlc://quit"
-interface="-I dummy"
-pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
-
-
-
-FFMPEG::Transcoder.timeout = 10
 
 def get_newest_video_path(live_path)
 	playlist = File.join live_path, "index.m3u8"
@@ -119,6 +90,39 @@ def get_screenshot(live_path)
 	movie.screenshot t.path if movie.valid?
 	return t
 end
+
+
+
+temperature_collecting_thread = Thread.new do
+	loop do
+		begin
+			mutex.lock
+			temperature_log['date'].push DateTime.now.strftime('%H:%M:%S')
+			thermo, inter = thermo_sensor.fetch
+			temperature_log['thermo'].push thermo
+			temperature_log['inter'].push inter
+			temperature_log['temp'].push temp_sensor.fetch
+			if temperature_log['date'].length > 60
+				temperature_log['date'].shift
+				temperature_log['thermo'].shift
+				temperature_log['inter'].shift
+				temperature_log['temp'].shift
+			end
+		ensure
+			mutex.unlock
+		end
+		sleep 60
+	end
+end
+
+
+# HTTP Live Streaming
+vlc="vlc"
+source="v4l2://#{config['hls']['video_path']}:chroma=H264:width=#{config['hls']['width']}:height=#{config['hls']['height']}:fps=#{config['hls']['fps']}"
+destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=live-#######.ts}"
+quit="vlc://quit"
+interface="-I dummy"
+pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
 
 
 streaming_thread = Thread.new do

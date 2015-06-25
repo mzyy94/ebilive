@@ -3,7 +3,7 @@ require 'yaml'
 require 'tempfile'
 require 'gruff'
 require 'streamio-ffmpeg'
-require_relative 'lib/sensors/thermocouple/MAX31855'
+require 'max31855'
 require_relative 'lib/sensors/temperature/ADT7410'
 
 config = YAML.load_file 'config.yml'
@@ -34,7 +34,7 @@ temperature_format = config['response']['temperature']
 
 
 # Setup sensors
-thermo_sensor = MAX31855.new
+thermo_sensor = Max31855.new
 temp_sensor = ADT7410.new
 
 # Temperature logging variable

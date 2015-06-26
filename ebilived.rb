@@ -5,6 +5,7 @@ require 'gruff'
 require 'streamio-ffmpeg'
 require 'max31855'
 require 'forever'
+require 'ws2812'
 require_relative 'lib/sensors/temperature/ADT7410'
 
 config = YAML.load_file 'config.yml'
@@ -46,6 +47,10 @@ FFMPEG::Transcoder.timeout = 10
 
 # Mutex to lock
 mutex = Mutex.new
+
+# LED configurations
+led_num = config['led']['number']
+led_pin = config['led']['pin']
 
 
 ## Some utilities
@@ -92,6 +97,15 @@ def get_screenshot(live_path)
 	return t
 end
 
+def show_led(r, g, b, a, n, num, pin)
+	ws = Ws2812::Basic.new(num, pin)
+	ws.open
+	ws[(0...n)] = Ws2812::Color.new(r, g, b)
+	ws.brightness = a
+	ws.show
+end
+
+
 Forever.run do
 
 	# Temperature logging
@@ -112,6 +126,32 @@ Forever.run do
 		ensure
 			mutex.unlock
 		end
+	end
+
+
+	# LED control
+	every 1.minutes, :at => "12:" do
+		show_led 0xff, 0xff, 0xff, Time.now.min, led_num, led_num, led_pin
+	end
+
+	every 1.minute, :at => "13:" do
+		show_led 0xff, 0xff, 0xff, 40 + Time.now.min, led_num, led_num, led_pin
+	end
+
+	every 2.minutes, :at => "15:" do
+		show_led 0xff, 0xff, 0xff, 100 - Time.now.min / 2, led_num, led_num, led_pin
+	end
+
+	every 1.minute, :at => "18:" do
+		show_led 0xff, 0xff - 4 * Time.now.min, 0xff - 4 * Time.now.min, 60, led_num, led_num, led_pin
+	end
+
+	every 1.minute, :at => "20:" do
+		show_led 0xff - 4 * Time.now.min, 0x0f, 4 * Time.now.min, 60, led_num, led_num, led_pin
+	end
+
+	every 5.minutes, :at => "23:" do
+		show_led 0x0f, 0x0f, 0xf0, 60, led_num - Time.now.min / 5, led_num, led_pin
 	end
 
 

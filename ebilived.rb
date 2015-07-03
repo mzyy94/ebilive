@@ -250,10 +250,11 @@ Forever.run do
 				puts "Error[#{error.code}]: #{error.message}\nCheck your token."
 			rescue Twitter::Error::ClientError, Twitter::Error::ServerError, Twitter::Error::TooManyRequests => error
 				puts "Error[#{error.code}]: #{error.message}\nWill retry in 10 sec."
-				sleep 30
+				sleep 10
 				retry
 			rescue Timeout::Error, Errno::EPIPE => error
 				puts "Error[#{error.code}]: #{error.message}\nWill retry in 30 sec."
+				sleep 30
 				retry
 			rescue => error
 				puts "Error[#{error.code}?]: #{error.message}"

@@ -168,39 +168,52 @@ Forever.run do
 
 	on_ready do
 		twitter_streaming_thread = Thread.new do
-			streaming.user(with: "user") do |tweet|
-				if tweet.is_a?(Twitter::Tweet)
-					if tweet.text =~ words
-						if tweet.text =~ video
-							#NOTE:this feature is effective with modified version of twitter-gem
-							# See https://github.com/mzyy94/twitter/tree/video-upload-feature
-							file = get_recorded_video config['hls']['live_path']
-							rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-							file.close
-						end
-
-						if tweet.text =~ picture
-							file = get_screenshot config['hls']['live_path']
-							rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-							file.close
-						end
-
-						if tweet.text =~ temperature
-							now = DateTime.now.to_s
-							thermo, inter = thermo_sensor.fetch
-							temp = temp_sensor.fetch
-							text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
-							begin
-								mutex.lock
-								file = generate_temperature_graph temperature_log
-							ensure
-								mutex.unlock
+			begin
+				streaming.user(with: "user") do |tweet|
+					if tweet.is_a?(Twitter::Tweet)
+						if tweet.text =~ words
+							if tweet.text =~ video
+								#NOTE:this feature is effective with modified version of twitter-gem
+								# See https://github.com/mzyy94/twitter/tree/video-upload-feature
+								file = get_recorded_video config['hls']['live_path']
+								rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+								file.close
 							end
-							rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
-							file.close
+
+							if tweet.text =~ picture
+								file = get_screenshot config['hls']['live_path']
+								rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+								file.close
+							end
+
+							if tweet.text =~ temperature
+								now = DateTime.now.to_s
+								thermo, inter = thermo_sensor.fetch
+								temp = temp_sensor.fetch
+								text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
+								begin
+									mutex.lock
+									file = generate_temperature_graph temperature_log
+								ensure
+									mutex.unlock
+								end
+								rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
+								file.close
+							end
 						end
 					end
 				end
+			rescue Twitter::Error::Forbidden, Twitter::Error::Unauthorized => error
+				puts "Error[#{error.code}]: #{error.message}\nCheck your token."
+			rescue Twitter::Error::ClientError, Twitter::Error::ServerError, Twitter::Error::TooManyRequests => error
+				puts "Error[#{error.code}]: #{error.message}\nWill retry in 10 sec."
+				sleep 30
+				retry
+			rescue Timeout::Error, Errno::EPIPE => error
+				puts "Error[#{error.code}]: #{error.message}\nWill retry in 30 sec."
+				retry
+			rescue => error
+				puts "Error[#{error.code}?]: #{error.message}"
 			end
 		end
 	end

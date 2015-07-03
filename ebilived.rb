@@ -159,10 +159,10 @@ Forever.run do
 		# HTTP Live Streaming
 		vlc="vlc"
 		source="v4l2://#{config['hls']['video_path']}:chroma=H264:width=#{config['hls']['width']}:height=#{config['hls']['height']}:fps=#{config['hls']['fps']}"
-		destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=live-#######.ts}"
+		destination="--sout=#standard{access=livehttp{seglen=#{config['hls']['seglen']},delsegs=#{config['hls']['delsegs']},numsegs=#{config['hls']['numsegs']},index=#{config['hls']['live_path']}/index.m3u8,index-url=live-#######.ts},mux=ts{use-key-frames},dst=#{config['hls']['live_path']}/live-#######.ts}"
 		quit="vlc://quit"
 		interface="-I dummy"
-		pid = spawn(vlc, interface, source, quit, destination, :err=>"/dev/null", :chdir=>config['hls']['live_path'])
+		pid = spawn("sudo", "-u", "pi", vlc, interface, source, quit, destination)
 	end
 
 

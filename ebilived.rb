@@ -192,7 +192,7 @@ Forever.run do
 	every 5.minutes, :at => "23:" do
 		leds = init_led led_num, led_pin
 		for i in 0...[Time.now.min/5, led_num].min
-			set_led_color leds[i], 0, 0, 0
+			set_led_color leds, 0, 0, 0, i
 		end
 		show_led leds, 0xc3
 	end

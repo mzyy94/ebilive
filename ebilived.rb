@@ -132,7 +132,7 @@ Forever.run do
 			temperature_log['thermo'].push thermo
 			temperature_log['inter'].push inter
 			temperature_log['temp'].push temp_sensor.fetch
-			if temperature_log['date'].length > 60
+			if temperature_log['date'].length > 180
 				temperature_log['date'].shift
 				temperature_log['thermo'].shift
 				temperature_log['inter'].shift

@@ -215,6 +215,7 @@ Forever.run do
 				streaming.user(with: "user") do |tweet|
 					if tweet.is_a?(Twitter::Tweet)
 						if tweet.text =~ words
+							puts "Tweet: #{tweet.text}"
 							if tweet.text =~ video
 								#NOTE:this feature is effective with modified version of twitter-gem
 								# See https://github.com/mzyy94/twitter/tree/video-upload-feature
@@ -246,18 +247,19 @@ Forever.run do
 						end
 					end
 				end
-			rescue Twitter::Error::Forbidden, Twitter::Error::Unauthorized => error
-				puts "Error[#{error.code}]: #{error.message}\nCheck your token."
+			rescue Timeout::Error, IOError, Errno::EPIPE => error
+				puts "Error[#{error.code}]: #{error.message}\nWill retry in 30 sec."
+				sleep 30
+				retry
 			rescue Twitter::Error::ClientError, Twitter::Error::ServerError, Twitter::Error::TooManyRequests => error
 				puts "Error[#{error.code}]: #{error.message}\nWill retry in 10 sec."
 				sleep 10
 				retry
-			rescue Timeout::Error, Errno::EPIPE => error
-				puts "Error[#{error.code}]: #{error.message}\nWill retry in 30 sec."
-				sleep 30
-				retry
+			rescue Twitter::Error::Forbidden, Twitter::Error::Unauthorized => error
+				puts "Error[#{error.code}]: #{error.message}\nCheck your token."
 			rescue => error
 				puts "Error[#{error.code}?]: #{error.message}"
+				retry
 			end
 		end
 	end

@@ -29,10 +29,12 @@ words = Regexp.new "(" + config['search']['trigger'].split(',').join('|') + ")"
 temperature = Regexp.new "(" + config['search']['temperature'].split(',').join('|') + ")"
 picture = Regexp.new "(" + config['search']['picture'].split(',').join('|') + ")"
 video = Regexp.new "(" + config['search']['video'].split(',').join('|') + ")"
+reboot = Regexp.new "(" + config['search']['reboot'].split(',').join('|') + ")"
 
 # Reply message
 message = config['response']['message']
 temperature_format = config['response']['temperature']
+reboot_message = config['response']['reboot']
 
 
 # Setup sensors
@@ -141,6 +143,15 @@ Forever.run do
 		end
 	end
 
+	# Timeline manual streaming thread reboot fetching
+	every 10.minute do
+		tweet = rest.user_timeline[0]
+		if tweet.text =~ words && tweet.text =~ reboot
+			puts "Tweet: #{tweet.text}"
+			Thread.kill @twitter_streaming_thread
+			rest.update("@#{tweet.user.screen_name} #{reboot_message}", {in_reply_to_status: tweet})
+		end
+	end
 
 	# LED control
 	every 1.minutes, :at => "12:" do
@@ -210,56 +221,62 @@ Forever.run do
 
 
 	on_ready do
-		twitter_streaming_thread = Thread.new do
-			begin
-				streaming.user(with: "user") do |tweet|
-					if tweet.is_a?(Twitter::Tweet)
-						if tweet.text =~ words
-							puts "Tweet: #{tweet.text}"
-							if tweet.text =~ video
-								#NOTE:this feature is effective with modified version of twitter-gem
-								# See https://github.com/mzyy94/twitter/tree/video-upload-feature
-								file = get_recorded_video config['hls']['live_path']
-								rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-								file.close
-							end
+		Thread.new do
+			while true
+				@twitter_streaming_thread = Thread.new do
+					begin
+						streaming.user(with: "user") do |tweet|
+							if tweet.is_a?(Twitter::Tweet)
+								if tweet.text =~ words
+									puts "Tweet: #{tweet.text}"
+									if tweet.text =~ video && false
+										#NOTE:this feature is effective with modified version of twitter-gem
+										# See https://github.com/mzyy94/twitter/tree/video-upload-feature
+										file = get_recorded_video config['hls']['live_path']
+										rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+										file.close
+									end
 
-							if tweet.text =~ picture
-								file = get_screenshot config['hls']['live_path']
-								rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
-								file.close
-							end
+									if tweet.text =~ picture
+										file = get_screenshot config['hls']['live_path']
+										rest.update_with_media("@#{tweet.user.screen_name} #{message}", file, {in_reply_to_status: tweet})
+										file.close
+									end
 
-							if tweet.text =~ temperature
-								now = DateTime.now.to_s
-								thermo, inter = thermo_sensor.fetch
-								temp = temp_sensor.fetch
-								text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
-								begin
-									mutex.lock
-									file = generate_temperature_graph temperature_log
-								ensure
-									mutex.unlock
+									if tweet.text =~ temperature
+										now = DateTime.now.to_s
+										thermo, inter = thermo_sensor.fetch
+										temp = temp_sensor.fetch
+										text = temperature_format.sub('#now', now).sub('#temp', temp.to_s).sub('#thermo', thermo.to_s).sub('#inter', inter.to_s)
+										begin
+											mutex.lock
+											file = generate_temperature_graph temperature_log
+										ensure
+											mutex.unlock
+										end
+										rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
+										file.close
+									end
 								end
-								rest.update_with_media("@#{tweet.user.screen_name} #{text}", file, {in_reply_to_status: tweet})
-								file.close
 							end
 						end
+					rescue Timeout::Error, IOError, Errno::EPIPE => error
+						puts "Error[#{error.code}]: #{error.message}\nWill retry in 30 sec."
+						sleep 30
+						retry
+					rescue Twitter::Error::ClientError, Twitter::Error::ServerError, Twitter::Error::TooManyRequests => error
+						puts "Error[#{error.code}]: #{error.message}\nWill retry in 10 sec."
+						sleep 10
+						retry
+					rescue Twitter::Error::Forbidden, Twitter::Error::Unauthorized => error
+						puts "Error[#{error.code}]: #{error.message}\nCheck your token."
+					rescue => error
+						puts "Error[#{error.code}?]: #{error.message}"
+						retry
 					end
 				end
-			rescue Timeout::Error, IOError, Errno::EPIPE => error
-				puts "Error[#{error.code}]: #{error.message}\nWill retry in 30 sec."
-				sleep 30
-				retry
-			rescue Twitter::Error::ClientError, Twitter::Error::ServerError, Twitter::Error::TooManyRequests => error
-				puts "Error[#{error.code}]: #{error.message}\nWill retry in 10 sec."
-				sleep 10
-				retry
-			rescue Twitter::Error::Forbidden, Twitter::Error::Unauthorized => error
-				puts "Error[#{error.code}]: #{error.message}\nCheck your token."
-			rescue => error
-				puts "Error[#{error.code}?]: #{error.message}"
-				retry
+				@twitter_streaming_thread.join
+				puts 'Restart twitter streaming thread.'
 			end
 		end
 	end

@@ -8,9 +8,11 @@ search:
     picture:             "画像,写真"
     video:               "動画,映像"
     temperature:         "温度"
+    reboot:              "再起動"
 response:
     message:             "えびだよ"
     temperature:         "#now\n\n気温:#temp℃\n水温:#thermo℃\nセンサー基準温度:#inter℃\n"
+    reboot:              "えびサーバーをリセットしたよ！"
 hls:
     video_path:          "/dev/video0"
     width:               1280

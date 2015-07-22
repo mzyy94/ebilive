@@ -10,6 +10,7 @@ Web camera direct live streaming scripts powered by Apple HTTP Live Streaming(HL
 - MAX31855 thermocouple sensor
 - ADT7410 temperature sensor
 - H.264 stream supported Web camera
+- Watchdog for Raspberry Pi {[Shop](https://www.switch-science.com/catalog/2254/), [Repository](https://github.com/SWITCHSCIENCE/Watchdog_for_RaspberryPi)}
 
 # Required Software
 
@@ -68,6 +69,19 @@ Copy and edit sample configuration file (config.sample.yml).
 |        numsegs     | Number of segments in playlist                        |
 |        live_path   | Absolute path of destination to save segments         |
 
+## LED configuration
+
+| Configuration name |       Description                                     |
+|:------------------:|:------------------------------------------------------|
+|        number      | Number of leds                                        |
+|          pin       | GPIO pin number where led is connected                |
+
+
+## Watchdog configuration
+| Configuration name |       Description                                     |
+|:------------------:|:------------------------------------------------------|
+|          pin       | GPIO pin number where watchdog timer is watching      |
+
 
 # How to run
 
@@ -81,7 +95,7 @@ $ bundle install
 
 ## Execution
 ```sh
-$ ruby ebilived.rb
+$ sudo ruby ebilived.rb
 ```
 
 

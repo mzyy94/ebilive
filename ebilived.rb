@@ -54,6 +54,9 @@ mutex = Mutex.new
 led_num = config['led']['number']
 led_pin = config['led']['pin']
 
+# Watchdog configurations
+wd_pin = config['watchdog']['pin']
+
 
 ## Some utilities
 
@@ -208,6 +211,13 @@ Forever.run do
 		show_led leds, 0xc3
 	end
 
+	# Watchdog timer
+	every 3.seconds do
+		IO.write "/sys/class/gpio/gpio#{wd_pin}/value", "1"
+		sleep 1
+		IO.write "/sys/class/gpio/gpio#{wd_pin}/value", "0"
+	end
+
 
 	before :all do
 		# HTTP Live Streaming
@@ -217,6 +227,10 @@ Forever.run do
 		quit="vlc://quit"
 		interface="-I dummy"
 		pid = spawn("sudo", "-u", "pi", vlc, interface, source, quit, destination)
+
+		# Watchdog settings
+		IO.write "/sys/class/gpio/export", wd_pin
+		IO.write "/sys/class/gpio/gpio#{wd_pin}/direction", "out"
 	end
 
 

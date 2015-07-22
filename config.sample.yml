@@ -25,3 +25,5 @@ hls:
 led:
     number:              8
     pin:                 18
+watchdog:
+    pin:                 17

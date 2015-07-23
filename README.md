@@ -98,6 +98,12 @@ $ bundle install
 $ sudo ruby ebilived.rb
 ```
 
+## Demonize by system
+```sh
+$ sudo cp init.d/foreverb /etc/init.d/
+$ sudo /usr/sbin/update-rc.d -f foreverb defaults
+```
+
 
 # HLS live streaming samples
 See [HLS_samples](HLS_samples).

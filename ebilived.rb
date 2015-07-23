@@ -9,6 +9,7 @@ require 'forever'
 require 'ws2812'
 require_relative 'lib/sensors/temperature/ADT7410'
 
+Dir.chdir File.expand_path('../', __FILE__)
 config = YAML.load_file 'config.yml'
 
 rest = Twitter::REST::Client.new(

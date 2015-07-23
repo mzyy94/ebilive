@@ -127,6 +127,10 @@ end
 
 
 Forever.run do
+	# Forever configuration
+	dir File.expand_path('../', __FILE__)
+	log "/var/log/#{name}.log"
+	pid "/tmp/#{name}.pid"
 
 	# Temperature logging
 	every 1.minute do
